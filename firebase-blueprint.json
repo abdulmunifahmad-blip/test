@@ -1,0 +1,152 @@
+{
+  "entities": {
+    "Complaint": {
+      "title": "Aduan Penduduk",
+      "description": "Rekod aduan rasmi yang dikemukakan oleh penduduk kondominium/apartmen.",
+      "type": "object",
+      "properties": {
+        "referenceNumber": {
+          "type": "string",
+          "description": "Nombor rujukan unik aduan contohnya ADU-2026-XXXXX",
+          "minLength": 8,
+          "maxLength": 30
+        },
+        "fullName": {
+          "type": "string",
+          "description": "Nama penuh pengadu",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "Nombor telefon pengadu di Malaysia",
+          "minLength": 8,
+          "maxLength": 20
+        },
+        "block": {
+          "type": "string",
+          "description": "Blok kediaman contohnya Blok A, Blok B, Blok C, Blok D",
+          "minLength": 1,
+          "maxLength": 50
+        },
+        "unitNumber": {
+          "type": "string",
+          "description": "Nombor unit kediaman contohnya A-12-03",
+          "minLength": 1,
+          "maxLength": 30
+        },
+        "category": {
+          "type": "string",
+          "description": "Kategori masalah aduan",
+          "enum": ["facilities", "cleanliness", "security", "parking", "maintenance", "other"]
+        },
+        "title": {
+          "type": "string",
+          "description": "Tajuk ringkas aduan",
+          "minLength": 3,
+          "maxLength": 150
+        },
+        "description": {
+          "type": "string",
+          "description": "Huraian terperinci mengenai aduan yang dialami",
+          "minLength": 10,
+          "maxLength": 2000
+        },
+        "photoUrl": {
+          "type": "string",
+          "description": "URL gambar bukti atau pautan data base64 (pilihan)",
+          "maxLength": 500000
+        },
+        "submissionDate": {
+          "type": "string",
+          "description": "Tarikh penyerahan aduan dalam format ISO atau rentetan tarikh",
+          "maxLength": 50
+        },
+        "status": {
+          "type": "string",
+          "description": "Status semasa pemprosesan aduan",
+          "enum": ["Baru", "Dalam Tindakan", "Menunggu Maklumat", "Selesai"]
+        },
+        "priority": {
+          "type": "string",
+          "description": "Tahap keutamaan aduan",
+          "enum": ["Rendah", "Sederhana", "Tinggi", "Kecemasan"]
+        },
+        "assignedTo": {
+          "type": "string",
+          "description": "Pegawai atau unit tindakan yang ditugaskan",
+          "maxLength": 100
+        },
+        "adminNotes": {
+          "type": "string",
+          "description": "Nota dalaman pentadbir",
+          "maxLength": 2000
+        },
+        "actionTaken": {
+          "type": "string",
+          "description": "Tindakan yang telah diambil oleh pihak pengurusan",
+          "maxLength": 2000
+        },
+        "history": {
+          "type": "array",
+          "description": "Jejak audit perubahan status dan tindakan aduan"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Masa penciptaan rekod"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Masa kemas kini rekod"
+        }
+      },
+      "required": [
+        "referenceNumber",
+        "fullName",
+        "phoneNumber",
+        "block",
+        "unitNumber",
+        "category",
+        "title",
+        "description",
+        "submissionDate",
+        "status"
+      ]
+    },
+    "Admin": {
+      "title": "Pentadbir Sah",
+      "description": "Senarai emel dan butiran pentadbir yang diberi kebenaran mengakses sistem pengurusan.",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "description": "Emel pentadbir berdaftar"
+        },
+        "name": {
+          "type": "string",
+          "description": "Nama pentadbir"
+        },
+        "role": {
+          "type": "string",
+          "description": "Peranan pentadbir",
+          "enum": ["Super Admin", "Pengurus Bangunan", "Pegawai Keselamatan", "Penyelia Penyelenggaraan"]
+        },
+        "addedAt": {
+          "type": "string",
+          "description": "Tarikh pelantikan"
+        }
+      },
+      "required": ["email", "role"]
+    }
+  },
+  "firestore": {
+    "/complaints/{complaintId}": {
+      "schema": "Complaint",
+      "description": "Koleksi semua aduan yang dikemukakan oleh penduduk kediaman"
+    },
+    "/admins/{adminId}": {
+      "schema": "Admin",
+      "description": "Koleksi senarai pentadbir sah yang dibenarkan mengurus sistem"
+    }
+  }
+}

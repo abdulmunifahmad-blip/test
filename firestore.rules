@@ -1,0 +1,110 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net: Default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'abdulmunifahmad@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (request.auth.token.email != null && exists(/databases/$(database)/documents/admins/$(request.auth.token.email)))
+      );
+    }
+
+    function isValidComplaint(data) {
+      return data.keys().hasAll([
+        'referenceNumber',
+        'fullName',
+        'phoneNumber',
+        'block',
+        'unitNumber',
+        'category',
+        'title',
+        'description',
+        'submissionDate',
+        'status'
+      ]) &&
+      data.keys().hasOnly([
+        'referenceNumber',
+        'fullName',
+        'phoneNumber',
+        'block',
+        'unitNumber',
+        'category',
+        'title',
+        'description',
+        'photoUrl',
+        'submissionDate',
+        'status',
+        'priority',
+        'assignedTo',
+        'adminNotes',
+        'actionTaken',
+        'history',
+        'createdAt',
+        'updatedAt'
+      ]) &&
+      data.referenceNumber is string && data.referenceNumber.size() >= 8 && data.referenceNumber.size() <= 30 &&
+      data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 100 &&
+      data.phoneNumber is string && data.phoneNumber.size() >= 8 && data.phoneNumber.size() <= 20 &&
+      data.block is string && data.block.size() >= 1 && data.block.size() <= 50 &&
+      data.unitNumber is string && data.unitNumber.size() >= 1 && data.unitNumber.size() <= 30 &&
+      data.category in ['facilities', 'cleanliness', 'security', 'parking', 'maintenance', 'other'] &&
+      data.title is string && data.title.size() >= 3 && data.title.size() <= 150 &&
+      data.description is string && data.description.size() >= 5 && data.description.size() <= 2000 &&
+      data.submissionDate is string && data.submissionDate.size() <= 50 &&
+      data.status in ['Baru', 'Dalam Tindakan', 'Menunggu Maklumat', 'Selesai'] &&
+      (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() <= 500000)) &&
+      (!('priority' in data) || (data.priority in ['Rendah', 'Sederhana', 'Tinggi', 'Kecemasan'])) &&
+      (!('assignedTo' in data) || (data.assignedTo is string && data.assignedTo.size() <= 100)) &&
+      (!('adminNotes' in data) || (data.adminNotes is string && data.adminNotes.size() <= 2000)) &&
+      (!('actionTaken' in data) || (data.actionTaken is string && data.actionTaken.size() <= 2000)) &&
+      (!('history' in data) || (data.history is list && data.history.size() <= 50));
+    }
+
+    // Koleksi Aduan Penduduk
+    match /complaints/{complaintId} {
+      // Penduduk awam boleh menghantar aduan tanpa akaun (status mestilah 'Baru')
+      allow create: if isValidId(complaintId) &&
+                       isValidComplaint(incoming()) &&
+                       incoming().status == 'Baru';
+
+      // Hanya pentadbir sah dibenarkan membaca semua aduan dan maklumat peribadi
+      allow read: if isAdmin();
+
+      // Hanya pentadbir dibenarkan mengemaskini status, nota, dan tugasan aduan
+      allow update: if isAdmin() &&
+                       isValidId(complaintId) &&
+                       isValidComplaint(incoming()) &&
+                       incoming().referenceNumber == existing().referenceNumber;
+
+      // Hanya pentadbir dibenarkan memadam aduan jika perlu
+      allow delete: if isAdmin() && isValidId(complaintId);
+    }
+
+    // Koleksi Pentadbir Sah
+    match /admins/{adminId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+  }
+}
